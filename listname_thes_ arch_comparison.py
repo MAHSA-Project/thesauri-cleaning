@@ -61,10 +61,10 @@ df = df.loc[~drop_condition].copy()
 df[8] = df[8].str.replace(' ', '_').str.lower()
 
 # Drop unnecessary columns (3 through 7)
-df.drop(df.columns[3:8], axis=1, inplace=True)
+df.drop(df.columns[4:8], axis=1, inplace=True)
 
 # Rename columns to meaningful names
-df.columns = ["odk_value", "concept_key", "definition", "list_name", "concept_value"]
+df.columns = ["odk_value", "concept_key", "definition", "list_order","list_name", "concept_value"]
 
 # Print the final DataFrame
 print(df)
