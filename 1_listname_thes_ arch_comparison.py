@@ -27,7 +27,7 @@ for sheet in sheets_to_delete:
     del workbook[sheet]
 
 # Save the cleaned workbook
-processed_path = os.path.join(data_dir, 'Processing/MAHSA_Thesauri_v4_processed_jack.xlsx')
+processed_path = os.path.join(data_dir, '1_Processing/excel_thesauri_processed.xlsx')
 workbook.save(processed_path)
 
 # Read the processed workbook
@@ -70,7 +70,7 @@ df.columns = ["odk_value", "concept_key", "definition", "list_order","list_name"
 print(df)
 
 # Save the final DataFrame to CSV, quoting all values
-output_csv = os.path.join(data_dir, 'Processing/MAHSA_Thesauri_v4_processed_jack.csv')
+output_csv = os.path.join(data_dir, '1_Processing/excel_thesauri_processed.csv')
 df.to_csv(output_csv, index=False, quoting=csv.QUOTE_ALL)
 
 print('Processing Completed')
@@ -90,7 +90,7 @@ arches_df = pd.read_excel(arches_path)
 # =======================
 # Step 3: Make a copy of the arches spreadsheet
 # =======================
-arches_processed_path = os.path.join(data_dir, 'Processing/arches_thesauri_export_processed.xlsx')
+arches_processed_path = os.path.join(data_dir, '1_Processing/arches_thesauri_processed.xlsx')
 arches_df.to_excel(arches_processed_path, index=False)
 
 # =======================
@@ -150,7 +150,7 @@ list_name_a_nm['close_match'] = list_name_a_nm['thesauri_list_name'].apply(lambd
 # =======================
 # Step 10: Create new Excel file with three tabs
 # =======================
-output_excel_path = os.path.join(data_dir, 'Comparison/thesauri_arches_list_name_comparison.xlsx')
+output_excel_path = os.path.join(data_dir, '2_Comparison/thesauri_arches_list_name_comparison.xlsx')
 #with pd.ExcelWriter(output_excel_path, engine='openpyxl') as writer:
 #    exact_matches.to_excel(writer, sheet_name='list_name_matches', index=False)
 #    list_name_t_nm.to_excel(writer, sheet_name='list_name_t_nm', index=False)

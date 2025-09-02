@@ -2,8 +2,8 @@ import os, re, shutil, datetime
 import pandas as pd
 import xlwings as xw
 
-bulkimport_dir = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\Updated_MAHSA_BulkImport"
-complete_concepts_dir = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\Complete_concepts"
+bulkimport_dir = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\4_Updated_MAHSA_BulkImport"
+complete_concepts_dir = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\3_Complete_concepts"
 
 # 1) find latest MASTER_MAHSA_BulkImport_Template_YYYYMMDD_N.xlsm
 pattern = re.compile(r"MASTER_MAHSA_BulkImport_Template_(\d{8})_(\d+)\.xlsm$")
