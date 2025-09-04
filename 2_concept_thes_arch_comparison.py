@@ -69,7 +69,8 @@ for _, row in exact_matches.iterrows():
             'definition': t_row['definition'].values[0] if 'definition' in t_row else pd.NA,
             'list_order': t_row['list_order'].values[0] if 'list_order' in t_row else pd.NA,
             'concept_value': a_row['concept_value'].values[0] if 'concept_value' in a_row else pd.NA,
-            'sortorder': a_row['sortorder'].values[0] if 'sortorder' in a_row else pd.NA
+            'sortorder': a_row['sortorder'].values[0] if 'sortorder' in a_row else pd.NA,
+            'bulk_import': t_row['bulk_import'].values[0] if 'bulk_import' in t_row else pd.NA
         })
 
     # --- Remaining concepts not matched exactly ---
@@ -115,11 +116,12 @@ for _, row in exact_matches.iterrows():
             })
 
 # =======================
-# Convert results to DataFrames (one with definition to be used later and on without)
+# Convert results to DataFrames (one with definition and bulk_import to be used later and on without)
 # =======================
 concept_exact_df_def = pd.DataFrame(
     concept_exact_matches,
-    columns=['list_name', 'thesauri_concept_name', 'arches_concept_name', 'definition', 'list_order', 'concept_value', 'sortorder']
+    columns=['list_name', 'thesauri_concept_name', 'arches_concept_name', 'definition', 'list_order', 'concept_value',
+             'sortorder', 'bulk_import']
 )
 concept_exact_df = pd.DataFrame(
     concept_exact_matches,
@@ -151,7 +153,8 @@ csv_output_path = os.path.join(csv_output_dir, f"complete_thesauri_concepts_{tod
 
 # Reformat exact matches dataframe
 csv_export_df = concept_exact_df_def.rename(columns={'arches_concept_name': 'concept_key'})
-csv_export_df = csv_export_df[['list_name', 'concept_value', 'concept_key', 'sortorder', 'list_order', 'definition']]
+csv_export_df = csv_export_df[['list_name', 'concept_value', 'concept_key', 'sortorder', 'list_order', 'definition',
+                               'bulk_import']]
 
 # Ensure list_order is numeric where possible (blanks stay NaN)
 csv_export_df['list_order'] = pd.to_numeric(csv_export_df['list_order'], errors='coerce')

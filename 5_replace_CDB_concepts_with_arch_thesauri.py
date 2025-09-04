@@ -40,11 +40,25 @@ csv_name, csv_date = csv_candidates[-1]
 csv_path = os.path.join(complete_concepts_dir, csv_name)
 print("Using CSV:", csv_name)
 
-# Path to your CSV (update this before running)
-#csv_path = r"D:\path\to\your\csv_file.csv"
-
 print(csv_path)
 
+# Copy current mahsa_thesauri on the CDB to the mahsa_thesauri_backup in case something goes wrong.
+# Delete current backup
+cur.execute("DELETE FROM public.mahsa_thesauri_test_backup;")
+conn.commit()
+print("All rows deleted from mahsa_thesauri_test_backup.")
+
+# Copy over current mahsa_thesauri_test values to backup
+cur.execute("""
+    INSERT INTO public.mahsa_thesauri_test_backup
+    (id, concept_key, concept_value, definition, list_name, bulk_import)
+    SELECT id, concept_key, concept_value, definition, list_name, bulk_import
+    FROM public.mahsa_thesauri_test;
+""")
+conn.commit()
+print("All rows copied from mahsa_thesauri_test to mahsa_thesauri_test_backup.")
+
+# Add new concepts to mahsa_thesauri
 # Step 1: Delete all existing rows from test table
 cur.execute("DELETE FROM public.mahsa_thesauri_test;")
 conn.commit()
@@ -54,12 +68,16 @@ print("All existing rows deleted from mahsa_thesauri_test.")
 df_csv = pd.read_csv(csv_path, dtype=str)  # read all as str to avoid formatting surprises
 
 # Step 3: Keep only the columns that match the Postgres table
-df_csv = df_csv[["id", "concept_key", "concept_value", "definition", "list_name"]]
+df_csv = df_csv[["id", "concept_key", "concept_value", "definition", "list_name", "bulk_import"]]
+
+# Replace NaN/empty strings with None so psycopg2 inserts NULL
+df_csv = df_csv.where(pd.notnull(df_csv), None)
+df_csv = df_csv.replace('', None)
 
 # Step 4: Insert rows into test table
 insert_query = """
-    INSERT INTO public.mahsa_thesauri_test (id, concept_key, concept_value, definition, list_name)
-    VALUES (%s, %s, %s, %s, %s);
+    INSERT INTO public.mahsa_thesauri_test (id, concept_key, concept_value, definition, list_name, bulk_import)
+    VALUES (%s, %s, %s, %s, %s, %s);
 """
 
 for row in df_csv.itertuples(index=False, name=None):

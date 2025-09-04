@@ -49,22 +49,36 @@ df[8] = df[8].replace('', pd.NA).ffill()
 # Copy column 1 to column 9
 df[9] = df[1]
 
+# Create col10 with BI Name from thesauri where present, else NA
+df[10] = np.where(df[0] == 'BI Name', df[1], pd.NA)
+
+# Forward-fill col10 within each group of col8
+df[10] = (
+    df.groupby(df[8])[10]
+      .apply(lambda g: g.ffill())
+      .reset_index(level=0, drop=True)
+)
+
+# Fallback — if col10 is still empty/NaN, copy col8
+df[10] = df[10].fillna(df[8])
+
 # Replace blank strings in column 0 with NaN
 df[0] = df[0].replace('', pd.NA)
 
 # Drop rows where column 0 is in specific labels or both column 0 and 1 are NaN
-labels_to_drop = ['Resource Model Node', 'ODK List Name', 'Legacy Data Column', 'ODK Value']
+labels_to_drop = ['Resource Model Node', 'ODK List Name', 'BI Name', 'Legacy Data Column', 'ODK Value']
 drop_condition = df[0].isin(labels_to_drop) | (df[0].isna() & df[1].isna())
 df = df.loc[~drop_condition].copy()
 
-# Transform column 8: replace spaces with underscores and lowercase
+# Transform column 8 and 10: replace spaces with underscores and lowercase
 df[8] = df[8].str.replace(' ', '_').str.lower()
+df[10] = df[10].str.replace(' ', '_').str.lower()
 
 # Drop unnecessary columns (3 through 7)
 df.drop(df.columns[4:8], axis=1, inplace=True)
 
 # Rename columns to meaningful names
-df.columns = ["odk_value", "concept_key", "definition", "list_order","list_name", "concept_value"]
+df.columns = ["odk_value", "concept_key", "definition", "list_order","list_name", "concept_value", "bulk_import"]
 
 # Print the final DataFrame
 print(df)
