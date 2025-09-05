@@ -4,6 +4,7 @@ import os
 import csv
 import openpyxl
 import numpy as np
+from difflib import get_close_matches
 
 # Define the data directory
 data_dir = os.path.join(os.getcwd(), "D:/University of Cambridge/ARCH_MAHSA - General/MAHSA_Database/Thesauri/Thesauri_Audit/Spreadsheets/")
@@ -102,6 +103,32 @@ arches_path = os.path.join(data_dir, 'arches_thesauri_export.xlsx')
 arches_df = pd.read_excel(arches_path)
 
 # =======================
+# FORCE INCLUDE IN ARCHES SPREADSHEET - Copy over artefacts_cultural_period* from thesauri_processed.csv
+# =======================
+thesauri_path = os.path.join(data_dir, '1_Processing/excel_thesauri_processed.csv')
+thesauri_df = pd.read_csv(thesauri_path)
+
+# The two list_names we want to copy
+forced_list_names = ['artefacts_cultural_period', 'artefacts_cultural_period_certainity']
+
+# Filter thesauri for just these
+forced_rows = thesauri_df[thesauri_df['list_name'].isin(forced_list_names)].copy()
+
+# Re-map columns to arches format
+forced_rows = pd.DataFrame({
+    'list_name': forced_rows['list_name'],
+    'parentid': "",  # leave blank
+    'concept_value': forced_rows['concept_value'],
+    'concept_key': forced_rows['concept_key'],
+    'relationshiptype': "narrower",  # constant
+    'sortorder': 1,  # constant
+    'arches_conceptid': ""  # leave blank
+})
+
+# Append these to arches_df
+arches_df = pd.concat([arches_df, forced_rows], ignore_index=True)
+
+# =======================
 # Step 3: Make a copy of the arches spreadsheet
 # =======================
 arches_processed_path = os.path.join(data_dir, '1_Processing/arches_thesauri_processed.xlsx')
@@ -138,7 +165,6 @@ exact_matches['exact_match'] = 'yes'
 # =======================
 # Step 8: Close matches for thesauri unique values not in exact matches
 # =======================
-from difflib import get_close_matches
 
 # Identify unmatched values
 thesauri_unmatched = thesauri_unique[~thesauri_unique['thesauri_list_name'].isin(exact_matches['thesauri_list_name'])]
@@ -165,10 +191,6 @@ list_name_a_nm['close_match'] = list_name_a_nm['thesauri_list_name'].apply(lambd
 # Step 10: Create new Excel file with three tabs
 # =======================
 output_excel_path = os.path.join(data_dir, '2_Comparison/thesauri_arches_list_name_comparison.xlsx')
-#with pd.ExcelWriter(output_excel_path, engine='openpyxl') as writer:
-#    exact_matches.to_excel(writer, sheet_name='list_name_matches', index=False)
-#    list_name_t_nm.to_excel(writer, sheet_name='list_name_t_nm', index=False)
-#    list_name_a_nm.to_excel(writer, sheet_name='list_name_a_nm', index=False)
 
 # Combine thesauri-only and arches-only non-matches into one DataFrame
 df_list_name_nm = pd.concat([list_name_t_nm, list_name_a_nm], ignore_index=True)
@@ -181,7 +203,5 @@ if "close_match" in df_list_name_nm.columns:
 with pd.ExcelWriter(output_excel_path, engine='openpyxl') as writer:
     exact_matches.to_excel(writer, sheet_name='list_name_matches', index=False)
     df_list_name_nm.to_excel(writer, sheet_name="list_name_nm", index=False)
-
-
 
 print('Comparison completed. Output saved to', output_excel_path)
