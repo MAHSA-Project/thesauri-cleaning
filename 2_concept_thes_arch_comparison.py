@@ -23,6 +23,7 @@ list_name_matches_path = os.path.join(data_dir, '2_Comparison/thesauri_arches_li
 # Load thesauri CSV (produced earlier)
 # =======================
 thesauri_df = pd.read_csv(thesauri_path)
+total_rows = len(thesauri_df)
 
 # =======================
 # Load arches processed Excel
@@ -70,7 +71,10 @@ for _, row in exact_matches.iterrows():
             'list_order': t_row['list_order'].values[0] if 'list_order' in t_row else pd.NA,
             'concept_value': a_row['concept_value'].values[0] if 'concept_value' in a_row else pd.NA,
             'sortorder': a_row['sortorder'].values[0] if 'sortorder' in a_row else pd.NA,
-            'bulk_import': t_row['bulk_import'].values[0] if 'bulk_import' in t_row else pd.NA
+            'bulk_import': t_row['bulk_import'].values[0] if 'bulk_import' in t_row else pd.NA,
+            'ODK_list_name': t_row['ODK_list_name'].values[0] if 'ODK_list_name' in t_row else pd.NA,
+            'ODK_multi': t_row['ODK_multi'].values[0] if 'ODK_multi' in t_row else pd.NA,
+            'odk_value': t_row['odk_value'].values[0] if 'odk_value' in t_row else pd.NA
         })
 
     # --- Remaining concepts not matched exactly ---
@@ -116,12 +120,12 @@ for _, row in exact_matches.iterrows():
             })
 
 # =======================
-# Convert results to DataFrames (one with definition and bulk_import to be used later and on without)
+# Convert results to DataFrames (one with definition and bulk_import to be used later and one without)
 # =======================
 concept_exact_df_def = pd.DataFrame(
     concept_exact_matches,
     columns=['list_name', 'thesauri_concept_name', 'arches_concept_name', 'definition', 'list_order', 'concept_value',
-             'sortorder', 'bulk_import']
+             'sortorder', 'bulk_import', 'ODK_list_name','ODK_multi','odk_value']
 )
 concept_exact_df = pd.DataFrame(
     concept_exact_matches,
@@ -132,6 +136,9 @@ concept_nm_df = pd.DataFrame(
     columns=['list_name', 'thesauri_concept_name', 'arches_concept_name', 'close_match']
 )
 
+thesauri_nm_count = concept_nm_df['thesauri_concept_name'].notna().sum()
+arches_nm_count = concept_nm_df['arches_concept_name'].notna().sum()
+
 # =======================
 # Save to Excel file
 # =======================
@@ -140,7 +147,53 @@ with pd.ExcelWriter(concepts_output_path, engine='openpyxl') as writer:
     concept_exact_df.to_excel(writer, sheet_name='concept_name_matches', index=False)
     concept_nm_df.to_excel(writer, sheet_name='concept_name_nm', index=False)
 
-print('Concept comparison completed. Output saved to', concepts_output_path)
+# Print messages of counts of list names (matchign and not matching), and whether everything matches or not
+print("=" * 60)
+print('Concept comparison completed')
+print("=" * 60)
+print(f"Thesauri unique concepts count with autopushed concepts: {total_rows}")
+# Handle the list_names that were pushed even though not Arches match
+countarc = thesauri_df[thesauri_df['list_name'].isin(['artefacts_cultural_period', 'artefacts_cultural_period_certainity'])].shape[0]
+print(f"Thesauri unique concepts autopushed even though not in Arches: {countarc}")
+count_minus_forced = total_rows - countarc
+arch_count_minus_forced = len(arches_df) - countarc
+
+print("=" * 60)
+print(f"Thesauri unique concepts count without autopushed values: {count_minus_forced}")
+print(f"Arches unique concepts count: {arch_count_minus_forced}")
+print("=" * 60)
+
+num_matches = len(concept_exact_df)
+print(f"Number of exact matches between thesauri and arches concept values: {num_matches}")
+total_unmatch_num = thesauri_nm_count + arches_nm_count
+print(f"Number of non-matches between thesauri and arches concept values: {total_unmatch_num}")
+print(f"             - Only in thesauri: {thesauri_nm_count}")
+print(f"             - Only in Arches: {arches_nm_count}")
+
+if total_unmatch_num > 0:
+    print("=" * 60)
+    print("⚠️  NOT ALL CONCEPTS MATCH ⚠️")
+    print(f"Check the output file for details:\n{concepts_output_path}")
+    print("=" * 60)
+else:
+    print("=" * 60)
+    print("✅ COMPLETE MATCH! Move onto the next step.")
+    print("=" * 60)
+
+# =======================
+# Pause to confirm continuation
+# =======================
+while True:
+    user_input = input("Do you want to continue and create the complete thesauri concepts CSV? (Y/N): ").strip().upper()
+
+    if user_input == "Y":
+        print("✅ Continuing with the next step...")
+        break  # Exit the loop and continue the script
+    elif user_input == "N":
+        print("❌ Stopping script. Please make changes and run again.")
+        exit()  # Stop the script immediately
+    else:
+        print("⚠️ Invalid input. Please type Y to continue or N to stop.")
 
 # =======================
 # Save additional CSV (complete thesauri concepts)
@@ -154,7 +207,7 @@ csv_output_path = os.path.join(csv_output_dir, f"complete_thesauri_concepts_{tod
 # Reformat exact matches dataframe
 csv_export_df = concept_exact_df_def.rename(columns={'arches_concept_name': 'concept_key'})
 csv_export_df = csv_export_df[['list_name', 'concept_value', 'concept_key', 'sortorder', 'list_order', 'definition',
-                               'bulk_import']]
+                               'bulk_import', 'ODK_list_name', 'ODK_multi', 'odk_value']]
 
 # Ensure list_order is numeric where possible (blanks stay NaN)
 csv_export_df['list_order'] = pd.to_numeric(csv_export_df['list_order'], errors='coerce')

@@ -11,13 +11,30 @@ data_dir = os.path.join(os.getcwd(), "D:/University of Cambridge/ARCH_MAHSA - Ge
 
 # Load the Excel workbook using openpyxl
 workbook_path = os.path.join(data_dir, 'MAHSA_Thesauri_v4_JT_copy.xlsx')
-print(workbook_path)
-workbook = openpyxl.load_workbook(workbook_path)
 
-#workbook = openpyxl.load_workbook(os.path.join(data_dir, 'MAHSA_Thesauri_v4_JT_copy.xlsx'))
+workbook = openpyxl.load_workbook(workbook_path)
 
 # Print all sheet names for reference
 print("Original sheets:", workbook.sheetnames)
+
+# Save the "ODK Only" sheet separately (to be used when generating new ODK form)
+if 'ODK Only' in workbook.sheetnames:
+    odk_sheet = workbook['ODK Only']
+
+    # Create a new workbook and copy the ODK Only sheet into it
+    odk_wb = openpyxl.Workbook()
+    odk_ws = odk_wb.active
+    odk_ws.title = 'ODK Only'
+
+    # Copy contents cell by cell
+    for row in odk_sheet.iter_rows(values_only=False):
+        for cell in row:
+            odk_ws[cell.coordinate].value = cell.value
+
+    # Save this workbook separately
+    odk_only_path = os.path.join(data_dir, '1_Processing/excel_thesauri_ODK_only.xlsx')
+    odk_wb.save(odk_only_path)
+    print(f"Saved 'ODK Only' sheet to: {odk_only_path}")
 
 # Delete unnecessary sheets
 sheets_to_delete = [
@@ -38,8 +55,9 @@ print("Sheets to process:", xls.sheet_names)
 # Collect all sheets into a list of DataFrames
 df_list = [pd.read_excel(processed_path, sheet_name=sheet, header=None) for sheet in xls.sheet_names]
 
-# Concatenate all sheets into a single DataFrame
+# Concatenate all sheets into a single DataFrame and remove any columns after column 7
 df = pd.concat(df_list, ignore_index=True)
+df = df.iloc[:, :8]
 
 # Create column 8: if column 0 is 'Resource Model Node', copy column 1; else empty string
 df[8] = np.where(df[0] == 'Resource Model Node', df[1], '')
@@ -52,10 +70,18 @@ df[9] = df[1]
 
 # Create col10 with BI Name from thesauri where present, else NA
 df[10] = np.where(df[0] == 'BI Name', df[1], pd.NA)
+df[11] = np.where(df[0] == 'ODK List Name', df[1], pd.NA)
 
 # Forward-fill col10 within each group of col8
 df[10] = (
     df.groupby(df[8])[10]
+      .apply(lambda g: g.ffill())
+      .reset_index(level=0, drop=True)
+)
+
+# Forward-fill col11 within each group of col8
+df[11] = (
+    df.groupby(df[8])[11]
       .apply(lambda g: g.ffill())
       .reset_index(level=0, drop=True)
 )
@@ -75,20 +101,18 @@ df = df.loc[~drop_condition].copy()
 df[8] = df[8].str.replace(' ', '_').str.lower()
 df[10] = df[10].str.replace(' ', '_').str.lower()
 
-# Drop unnecessary columns (3 through 7)
-df.drop(df.columns[4:8], axis=1, inplace=True)
+# Replace 'NOT in ODK' with blank in column 11
+df[11] = df[11].astype(str).replace('Not in ODK', '')
+
+# Drop unnecessary columns (4 through 7)
+df.drop(df.columns[4:7], axis=1, inplace=True)
 
 # Rename columns to meaningful names
-df.columns = ["odk_value", "concept_key", "definition", "list_order","list_name", "concept_value", "bulk_import"]
-
-# Print the final DataFrame
-print(df)
+df.columns = ["odk_value", "concept_key", "definition", "list_order", "ODK_multi", "list_name", "concept_value", "bulk_import", "ODK_list_name"]
 
 # Save the final DataFrame to CSV, quoting all values
 output_csv = os.path.join(data_dir, '1_Processing/excel_thesauri_processed.csv')
 df.to_csv(output_csv, index=False, quoting=csv.QUOTE_ALL)
-
-print('Processing Completed')
 
 # =======================
 # Step 1: Sort thesauri CSV by 'list_name' then 'concept_value'
@@ -204,4 +228,22 @@ with pd.ExcelWriter(output_excel_path, engine='openpyxl') as writer:
     exact_matches.to_excel(writer, sheet_name='list_name_matches', index=False)
     df_list_name_nm.to_excel(writer, sheet_name="list_name_nm", index=False)
 
-print('Comparison completed. Output saved to', output_excel_path)
+# Print messages of counts of list names (matchign and not matching), and whether everything matches or not
+print("=" * 60)
+print('Comparison completed')
+print("=" * 60)
+print(f"Thesauri unique list_name count: {len(thesauri_unique)}")
+print(f"Arches unique list_name count: {len(arches_unique)}")
+num_matches = len(exact_matches)
+print(f"Number of exact matches between thesauri and arches list_name values: {num_matches}")
+print(f"Number of non-matches between thesauri and arches list_name values: {len(df_list_name_nm)}")
+
+if len(df_list_name_nm) > 0:
+    print("=" * 60)
+    print("⚠️  NOT ALL LISTS MATCH ⚠️")
+    print(f"Check the output file for details:\n{output_excel_path}")
+    print("=" * 60)
+else:
+    print("=" * 60)
+    print("✅ COMPLETE MATCH! Move onto the next step.")
+    print("=" * 60)
