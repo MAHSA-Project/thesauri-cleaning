@@ -131,7 +131,7 @@ df = pd.concat(new_rows, ignore_index=True)
 df.insert(0, 'list_name', 'recorder_list')
 
 df_unique = df[['institutename', 'institute_name']].drop_duplicates().rename(
-    columns={'institutename': 'name', 'institute_name': 'label'}
+    columns={'institutename': 'label', 'institute_name': 'name'}
 )
 df_unique.insert(0, 'list_name', 'institute_name')
 
@@ -161,7 +161,7 @@ csv_path = os.path.join(complete_concepts_dir, csv_name)
 print(f"📘 Using most recent thesauri file: {csv_name}")
 
 # Load and keep only relevant columns
-df_thes = pd.read_csv(csv_path, usecols=["ODK_list_name", "odk_value", "concept_key", "ODK_multi", "list_order"])
+df_thes = pd.read_csv(csv_path, usecols=["ODK_list_name", "odk_value", "concept_key", "concept_value", "ODK_multi", "list_order"])
 
 # --- Keep only rows with a valid, non-empty odk_value ---
 df_thes = df_thes[
@@ -194,7 +194,7 @@ for _, row in df_thes.iterrows():
 df_thes = pd.DataFrame(df_expanded)
 
 # Sort by ODK_list_name, ODK_multi, concept_key, then list_order (if present)
-df_thes = df_thes.sort_values(by=["ODK_list_name", "multi_val", "list_order", "concept_key"], na_position="last")
+df_thes = df_thes.sort_values(by=["ODK_list_name", "multi_val", "list_order", "concept_value"], na_position="last")
 
 # Map to final structure
 df_thes_final = pd.DataFrame({

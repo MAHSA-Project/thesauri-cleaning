@@ -10,7 +10,7 @@ from difflib import get_close_matches
 data_dir = os.path.join(os.getcwd(), "D:/University of Cambridge/ARCH_MAHSA - General/MAHSA_Database/Thesauri/Thesauri_Audit/Spreadsheets/")
 
 # Load the Excel workbook using openpyxl
-workbook_path = os.path.join(data_dir, 'MAHSA_Thesauri_v4_JT_copy.xlsx')
+workbook_path = os.path.join('D:/University of Cambridge/ARCH_MAHSA - General/MAHSA_Database/Thesauri/MAHSA_Thesauri_v5.xlsx')
 
 workbook = openpyxl.load_workbook(workbook_path)
 
