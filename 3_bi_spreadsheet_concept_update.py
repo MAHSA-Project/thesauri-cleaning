@@ -5,15 +5,15 @@ import xlwings as xw
 bulkimport_dir = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\4_Updated_MAHSA_BulkImport"
 complete_concepts_dir = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\3_Complete_concepts"
 
-# 1) find latest MASTER_MAHSA_BulkImport_Template_YYYYMMDD_N.xlsm
-pattern = re.compile(r"MASTER_MAHSA_BulkImport_Template_(\d{8})_(\d+)\.xlsm$")
+# 1) find latest MASTER_MAHSA_BulkImport_Template_V12_YYYYMMDD_N.xlsm
+pattern = re.compile(r"MASTER_MAHSA_BulkImport_Template_V12_(\d{8})_(\d+)\.xlsm$")
 candidates = []
 for f in os.listdir(bulkimport_dir):
     m = pattern.match(f)
     if m:
         candidates.append((f, m.group(1), int(m.group(2))))
 if not candidates:
-    raise FileNotFoundError("No MASTER_MAHSA_BulkImport_Template_*.xlsm files found in folder.")
+    raise FileNotFoundError("No MASTER_MAHSA_BulkImport_Template_V12_*.xlsm files found in folder.")
 candidates.sort(key=lambda x: (x[1], x[2]))
 latest_file, latest_date, latest_num = candidates[-1]
 latest_path = os.path.join(bulkimport_dir, latest_file)
@@ -21,7 +21,7 @@ latest_path = os.path.join(bulkimport_dir, latest_file)
 # 2) make new filename with today's date and incremented number
 today_str = datetime.datetime.today().strftime("%Y%m%d")
 new_num = latest_num + 1
-new_file = f"MASTER_MAHSA_BulkImport_Template_{today_str}_{new_num}.xlsm"
+new_file = f"MASTER_MAHSA_BulkImport_Template_V12_{today_str}_{new_num}.xlsm"
 new_path = os.path.join(bulkimport_dir, new_file)
 
 # 3) copy the file (binary copy preserves macros, etc.)

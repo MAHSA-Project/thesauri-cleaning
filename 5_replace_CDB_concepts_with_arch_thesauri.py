@@ -44,25 +44,25 @@ print(csv_path)
 
 # Copy current mahsa_thesauri on the CDB to the mahsa_thesauri_backup in case something goes wrong.
 # Delete current backup
-cur.execute("DELETE FROM public.mahsa_thesauri_test_backup;")
+cur.execute("DELETE FROM public.mahsa_thesauri_backup;")
 conn.commit()
-print("All rows deleted from mahsa_thesauri_test_backup.")
+print("All rows deleted from mahsa_thesauri_backup.")
 
-# Copy over current mahsa_thesauri_test values to backup
+# Copy over current mahsa_thesauri values to backup
 cur.execute("""
-    INSERT INTO public.mahsa_thesauri_test_backup
+    INSERT INTO public.mahsa_thesauri_backup
     (id, concept_key, concept_value, definition, list_name, bulk_import)
     SELECT id, concept_key, concept_value, definition, list_name, bulk_import
-    FROM public.mahsa_thesauri_test;
+    FROM public.mahsa_thesauri;
 """)
 conn.commit()
-print("All rows copied from mahsa_thesauri_test to mahsa_thesauri_test_backup.")
+print("All rows copied from mahsa_thesauri to mahsa_thesauri_backup.")
 
 # Add new concepts to mahsa_thesauri
 # Step 1: Delete all existing rows from test table
-cur.execute("DELETE FROM public.mahsa_thesauri_test;")
+cur.execute("DELETE FROM public.mahsa_thesauri;")
 conn.commit()
-print("All existing rows deleted from mahsa_thesauri_test.")
+print("All existing rows deleted from mahsa_thesauri.")
 
 # Step 2: Load CSV
 df_csv = pd.read_csv(csv_path, dtype=str)  # read all as str to avoid formatting surprises
@@ -76,7 +76,7 @@ df_csv = df_csv.replace('', None)
 
 # Step 4: Insert rows into test table
 insert_query = """
-    INSERT INTO public.mahsa_thesauri_test (id, concept_key, concept_value, definition, list_name, bulk_import)
+    INSERT INTO public.mahsa_thesauri (id, concept_key, concept_value, definition, list_name, bulk_import)
     VALUES (%s, %s, %s, %s, %s, %s);
 """
 
@@ -84,7 +84,7 @@ for row in df_csv.itertuples(index=False, name=None):
     cur.execute(insert_query, row)
 
 conn.commit()
-print(f"Inserted {len(df_csv)} rows into mahsa_thesauri_test.")
+print(f"Inserted {len(df_csv)} rows into mahsa_thesauri.")
 
 # Close connection
 cur.close()

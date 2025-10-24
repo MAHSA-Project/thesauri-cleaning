@@ -30,6 +30,8 @@ conn = psycopg2.connect(
 
 # Pull the entire table public.mahsa_thesauri into a DataFrame
 dfcdb = pd.read_sql("SELECT * FROM public.mahsa_thesauri;", conn)
+with pd.option_context('display.max_columns', None):
+    print(dfcdb.head())
 
 # Close the connection
 conn.close()

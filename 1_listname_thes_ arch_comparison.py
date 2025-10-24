@@ -60,7 +60,21 @@ df = pd.concat(df_list, ignore_index=True)
 df = df.iloc[:, :8]
 
 # Create column 8: if column 0 is 'Resource Model Node', copy column 1; else empty string
-df[8] = np.where(df[0] == 'Resource Model Node', df[1], '')
+df[8] = np.where(df[0].isin(['Resource Model Node', 'CDB List Name']), df[1], '')
+
+# Create a separate DataFrame with unique list_names that had 'CDB List Name' in column 0
+cdb_listnames_df = (
+    df.loc[df[0] == 'CDB List Name', [1]]
+      .drop_duplicates()
+      .rename(columns={1: 'list_name'})
+)
+
+# Normalise CDB list names (replace spaces with underscores, lowercase)
+cdb_listnames_df['list_name'] = (
+    cdb_listnames_df['list_name']
+    .str.replace(' ', '_')
+    .str.lower()
+)
 
 # Forward-fill missing values in column 8
 df[8] = df[8].replace('', pd.NA).ffill()
@@ -93,7 +107,7 @@ df[10] = df[10].fillna(df[8])
 df[0] = df[0].replace('', pd.NA)
 
 # Drop rows where column 0 is in specific labels or both column 0 and 1 are NaN
-labels_to_drop = ['Resource Model Node', 'ODK List Name', 'BI Name', 'Legacy Data Column', 'ODK Value']
+labels_to_drop = ['Resource Model Node', 'CDB List Name', 'ODK List Name', 'BI Name', 'Legacy Data Column', 'ODK Value']
 drop_condition = df[0].isin(labels_to_drop) | (df[0].isna() & df[1].isna())
 df = df.loc[~drop_condition].copy()
 
@@ -132,11 +146,15 @@ arches_df = pd.read_excel(arches_path)
 thesauri_path = os.path.join(data_dir, '1_Processing/excel_thesauri_processed.csv')
 thesauri_df = pd.read_csv(thesauri_path)
 
-# The two list_names we want to copy
+# Always include these fixed list names
 forced_list_names = ['artefacts_cultural_period', 'artefacts_cultural_period_certainity']
 
-# Filter thesauri for just these
-forced_rows = thesauri_df[thesauri_df['list_name'].isin(forced_list_names)].copy()
+# Combine with the CDB list names we captured earlier
+all_forced_list_names = forced_list_names + cdb_listnames_df['list_name'].tolist()
+print(all_forced_list_names)
+
+# Filter thesauri for all lists to force include
+forced_rows = thesauri_df[thesauri_df['list_name'].isin(all_forced_list_names)].copy()
 
 # Re-map columns to arches format
 forced_rows = pd.DataFrame({
