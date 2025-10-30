@@ -94,7 +94,7 @@ print(f"✅ ODK Only concepts saved as: {odk_only_path}")
 # STEP 2 - Create choices sheet from PO details (Bulk Import)
 # ================================================================
 
-bulk_input = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\Thesauri\Thesauri_Audit\Spreadsheets\Common_BulkImportSheet.xlsx"
+bulk_input = r"D:\University of Cambridge\ARCH_MAHSA - General\MAHSA_Database\ArchesDataDigitization\CommonDataSheets\Common_BulkImportSheet.xlsx"
 bulk_output = os.path.join(output_folder, "ODK_PO_entries.xlsx")
 
 df_raw = pd.read_excel(bulk_input, sheet_name="Person-Organization RM", skiprows=3)
